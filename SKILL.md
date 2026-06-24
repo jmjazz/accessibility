@@ -2,7 +2,7 @@
 name: accessibility
 description: >
   HTML 마크업과 Figma 디자인 양쪽의 접근성을 검수하고 개선하는 Skill.
-  WCAG 2.1 AA + 바이널씨 컨벤션 기준으로 점검한다.
+  WCAG 2.2 AA + 바이널씨 컨벤션 기준으로 점검한다.
   트리거 예시: "접근성 검수해줘", "웹 접근성 확인해줘", "WCAG 체크해줘",
   "스크린리더 대응해줘", "키보드 접근성 확인해줘", "색상 대비 확인해줘",
   "aria 써줘", "접근성 개선해줘", "figma 접근성 확인해줘", "디자인 접근성 검수".
@@ -10,7 +10,7 @@ description: >
 
 # Accessibility Review Skill
 
-WCAG 2.1 AA + 바이널씨 컨벤션 기준의 접근성 검수 및 개선 Skill.  
+WCAG 2.2 AA + 바이널씨 컨벤션 기준의 접근성 검수 및 개선 Skill.  
 HTML 마크업과 Figma 디자인 모두 커버한다.
 
 ---
@@ -111,14 +111,18 @@ color: var(--color-text-disabled);     /* #a3a3a3 on white = 2.3:1 → 텍스트
 
 ### 2-2. 포커스 표시
 
+**[2.4.11 AA — WCAG 2.2 신규]** 포커스 인디케이터 최소 요건:
+- 포커스 링의 둘레 면적이 컴포넌트 둘레 × 2px 이상
+- 포커스 링과 인접 색상 간 대비 **3:1 이상**
+
 ```css
 /* ❌ 절대 금지 */
 :focus { outline: none; }
 *:focus { outline: 0; }
 
-/* ✅ 커스텀 포커스 스타일 (outline 제거 시 반드시 대체 제공) */
+/* ✅ 커스텀 포커스 스타일 — WCAG 2.4.11 AA 충족 */
 :focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--color-border-focus); /* 인접 색 대비 3:1 이상 확보 */
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -151,14 +155,25 @@ color: var(--color-text-disabled);     /* #a3a3a3 on white = 2.3:1 → 텍스트
 
 ### 2-4. 충분한 클릭 영역
 
-터치 타깃 최소 44×44px (모바일 기준):
+| 기준 | 크기 | 레벨 |
+|------|------|-------|
+| **[2.5.8 WCAG 2.2 신규]** 타깃 크기 최소 | **24×24px** (또는 인접 타깃과의 간격 포함 24px) | AA |
+| **[2.5.5]** 타깃 크기 권장 | **44×44px** | AAA |
+| 바이널씨 컨벤션 | **44×44px** (AAA 수준 권장 유지) | — |
 
 ```css
-/* ✅ 작은 아이콘 버튼에 패딩으로 타깃 확장 */
+/* ✅ AA 최소 충족 (24px) + 바이널씨 권장 (44px) */
 .icon_btn {
   padding: var(--spacing-2);
   min-width: 44px;
   min-height: 44px;
+}
+
+/* ✅ 타깃 자체가 작을 때 — 히트 영역 확장으로 2.5.8 AA 충족 */
+.icon_btn--small::after {
+  content: '';
+  position: absolute;
+  inset: -10px; /* 시각 크기가 24px 미만이어도 히트 영역 24px 이상 확보 */
 }
 ```
 
@@ -291,6 +306,64 @@ modal.addEventListener('close', () => {
 
 ---
 
+## 영역 5-B: WCAG 2.2 신규 기준
+
+### 5B-1. 드래그 대체 수단 [2.5.7 AA]
+
+드래그로만 동작하는 기능에는 반드시 클릭/탭 기반 대체 수단을 제공해야 한다.
+
+```html
+<!-- ❌ 드래그만 지원 -->
+<ul id="sortable">...</ul>
+
+<!-- ✅ 드래그 + 버튼 대체 수단 병행 -->
+<ul id="sortable">
+  <li>
+    항목 A
+    <button aria-label="항목 A를 위로 이동" onclick="moveUp(this)">▲</button>
+    <button aria-label="항목 A를 아래로 이동" onclick="moveDown(this)">▼</button>
+  </li>
+</ul>
+```
+
+### 5B-2. 일관된 도움 [3.2.6 A]
+
+고객센터 링크, 챗봇, 전화번호 등 도움 메커니즘이 여러 페이지에 걸쳐 있을 경우 **동일한 위치**에 배치해야 한다.
+
+```
+✅ 푸터 고객센터 링크가 모든 페이지에서 동일한 순서/위치로 노출
+❌ 어떤 페이지는 푸터, 어떤 페이지는 사이드바에 위치
+```
+
+### 5B-3. 중복 입력 방지 [3.3.7 A]
+
+동일한 세션 내에서 이미 입력한 정보를 다시 요구하지 않는다.
+
+```html
+<!-- ✅ 배송지와 청구지가 같을 때 자동 채우기 -->
+<label>
+  <input type="checkbox" id="sameAddr" onchange="copyAddress()">
+  배송지와 동일
+</label>
+
+<!-- ✅ 이전 단계 입력값 자동 유지 (다단계 폼) -->
+<input id="email" value="이전 단계에서 입력한 값 자동 채움">
+```
+
+### 5B-4. 인증 접근성 [3.3.8 AA]
+
+로그인 등 인증 과정에서 인지 기능 테스트(암호 외우기, 수수께끼, CAPTCHA)를 **유일한 수단**으로 요구하지 않는다.
+
+```
+✅ 허용: 비밀번호 관리자 사용 가능한 일반 비밀번호 입력
+✅ 허용: 이메일 OTP / 소셜 로그인 대체 수단 제공
+✅ 허용: CAPTCHA가 있어도 이메일 인증 등 대체 수단 존재
+❌ 금지: 텍스트 CAPTCHA만 제공하고 다른 인증 수단 없음
+❌ 금지: 특정 이미지 기억 후 선택을 유일한 인증 수단으로 사용
+```
+
+---
+
 ## 영역 6: Figma 디자인 접근성
 
 디자인 단계에서 확인해야 할 항목. figma-mcp-go가 연결된 경우 변수·스타일을 직접 조회해 검수한다.
@@ -310,9 +383,9 @@ modal.addEventListener('close', () => {
 
 ### 6-2. 터치 타깃 크기
 
-모바일 화면의 모든 인터랙티브 요소는 최소 **44×44px** 확보해야 한다.
-
-- 아이콘이 작아도 히트 영역(터치 영역)은 44px 이상으로 설계
+- **[2.5.8 AA]** 터치 타깃 최소 **24×24px** (WCAG 2.2 신규)
+- **[2.5.5 AAA / 바이널씨 권장]** **44×44px** 이상 권장
+- 아이콘이 작아도 히트 영역(터치 영역)은 24px 이상으로 설계
 - Figma에서 컴포넌트의 실제 frame 크기 기준으로 확인
 
 ### 6-3. 포커스 인디케이터 디자인
@@ -357,10 +430,16 @@ modal.addEventListener('close', () => {
 [ ] 에러 메시지에 role="alert" 또는 aria-live
 [ ] 아이콘 전용 버튼에 aria-label
 [ ] 모달/팝업 포커스 트랩 + 복귀
-[ ] 터치 타깃 44×44px 이상
+[ ] 터치 타깃 24×24px 이상 (AA), 44×44px 권장
 [ ] 움직이는 요소 prefers-reduced-motion 대응
 [ ] 제목(heading) 계층 순서 올바름
 [ ] 테이블에 caption + scope 속성
+--- WCAG 2.2 신규 ---
+[ ] [2.4.11] 포커스 링 — 인접 색 대비 3:1 이상, 두께 2px 이상
+[ ] [2.5.7] 드래그 기능에 클릭/탭 대체 수단 존재
+[ ] [3.2.6] 도움 메커니즘(고객센터 등)이 모든 페이지에서 동일 위치
+[ ] [3.3.7] 동일 세션 내 이미 입력한 정보 재요구 없음
+[ ] [3.3.8] 인증 과정에 인지 테스트만 강제하지 않음
 
 [디자인]
 [ ] Figma 컴포넌트에 focused state 정의됨
@@ -379,7 +458,7 @@ modal.addEventListener('close', () => {
 ```
 ## 접근성 검수 결과: [파일명/컴포넌트명]
 
-❌ Critical (즉시 수정 — WCAG 위반)
+❌ Critical (즉시 수정 — WCAG 2.2 위반)
 - [1.1.1] Line N: 이미지에 alt 속성 없음 → alt="[설명]" 추가
 
 ⚠️ Warning (수정 권장)
